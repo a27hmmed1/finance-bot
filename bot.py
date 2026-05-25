@@ -1,5 +1,6 @@
 import os
 import sys
+import asyncio
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
@@ -23,6 +24,9 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
         self.wfile.write(b"Bot is running")
+    def do_HEAD(self):
+        self.send_response(200)
+        self.end_headers()
 
 def run_http():
     server = HTTPServer(("0.0.0.0", PORT), HealthHandler)
@@ -55,8 +59,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print("Error:", e)
         await update.message.reply_text("❌ حصل خطأ في الاتصال")
 
-app = Application.builder().token(TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-print("Bot is running...")
-app.run_polling()
+async def main():
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    print("Bot is running...")
+    await app.run_polling()
+
+if __name__ == "__main__":
+    asyncio.run(main())
