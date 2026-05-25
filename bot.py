@@ -1,12 +1,10 @@
 import os
 import sys
-import asyncio
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
 from dotenv import load_dotenv
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 load_dotenv()
 
@@ -37,10 +35,10 @@ t.start()
 print(f"Health server running on port {PORT}")
 
 # ── Telegram Bot ───────────────────────────────────────────
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start(update, context):
     await update.message.reply_text("مرحباً! ابعت أي مصروف أو دخل وأنا هسجله 📊")
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_message(update, context):
     text = update.message.text
     chat_id = update.message.chat_id
 
@@ -59,12 +57,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print("Error:", e)
         await update.message.reply_text("❌ حصل خطأ في الاتصال")
 
-async def main():
+def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     print("Bot is running...")
-    await app.run_polling()
+    app.run_polling()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
