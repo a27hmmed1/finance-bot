@@ -1,4 +1,7 @@
 import os
+import sys
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
 from dotenv import load_dotenv
 from telegram import Update
@@ -8,7 +11,28 @@ load_dotenv()
 
 TOKEN = os.getenv("BOT_TOKEN")
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzj2TV03a4gPfsHgfG-JAdOWx_mSRNZa7dozFck7Uq8XtaBtPvaJvDxuZt66U0rPUdi/exec"
+PORT = int(os.getenv("PORT", 10000))
 
+if not TOKEN:
+    print("ERROR: BOT_TOKEN is not set!")
+    sys.exit(1)
+
+# ── Health check server ────────────────────────────────────
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is running")
+
+def run_http():
+    server = HTTPServer(("0.0.0.0", PORT), HealthHandler)
+    server.serve_forever()
+
+t = threading.Thread(target=run_http, daemon=True)
+t.start()
+print(f"Health server running on port {PORT}")
+
+# ── Telegram Bot ───────────────────────────────────────────
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("مرحباً! ابعت أي مصروف أو دخل وأنا هسجله 📊")
 
@@ -34,6 +58,5 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 app = Application.builder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
 print("Bot is running...")
 app.run_polling()
