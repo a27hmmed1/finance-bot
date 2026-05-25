@@ -1,5 +1,6 @@
 import os
 import sys
+import asyncio
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
@@ -19,12 +20,10 @@ if not TOKEN:
 # ── Health check server ────────────────────────────────────
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
+        self.send_response(200); self.end_headers()
         self.wfile.write(b"Bot is running")
     def do_HEAD(self):
-        self.send_response(200)
-        self.end_headers()
+        self.send_response(200); self.end_headers()
 
 def run_http():
     server = HTTPServer(("0.0.0.0", PORT), HealthHandler)
@@ -41,12 +40,9 @@ async def start(update, context):
 async def handle_message(update, context):
     text = update.message.text
     chat_id = update.message.chat_id
-
     try:
         r = requests.get(WEB_APP_URL, params={
-            "action": "inbox",
-            "chat_id": chat_id,
-            "message": text
+            "action": "inbox", "chat_id": chat_id, "message": text
         }, timeout=10)
         result = r.json()
         if result.get("success"):
@@ -65,4 +61,5 @@ def main():
     app.run_polling()
 
 if __name__ == "__main__":
+    asyncio.set_event_loop(asyncio.new_event_loop())
     main()
